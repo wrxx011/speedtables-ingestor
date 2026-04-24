@@ -3,7 +3,6 @@
 The data is saved under `$pwd/data`
 
 the data is structured like:
-
 ```
 [
     {
@@ -25,10 +24,10 @@ the data is structured like:
     ]
     },
 ]
+```
 
 if you ever intend to use this, use rate limiter
 
-```
 
 To install dependencies:
 
