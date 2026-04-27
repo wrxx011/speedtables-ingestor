@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum SessionType {
+  practice
+  qualifying
+  race
+  warmup
+  rally
+  test
+  unknown
+}
+
+enum SeriesCategory {
+  circuit
+  rally
+  moto
+}
+
+enum SeasonStatus {
+  active
+  inactive
+  unknown
+}
+
+enum EventStatus {
+  scheduled
+  cancelled
+  postponed
+  completed
+  tbc
+  ongoing
+}
+
+enum SessionStatus {
+  upcoming
+  cancelled
+  postponed
+  completed
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model Series {
+  id       BigInt         @id @default(autoincrement())
+  slug     String         @unique
+  name     String
+  category SeriesCategory
+  colorHex String?        @map("color_hex")
+
+  seasons Season[]
+
+  @@map("series")
+}
+
+model Season {
+  id       BigInt       @id @default(autoincrement())
+  seriesId BigInt       @map("series_id")
+  year     Int          @db.SmallInt
+  status   SeasonStatus
+
+  series Series  @relation(fields: [seriesId], references: [id])
+  events Event[]
+
+  @@map("season")
+}
+
+model Circuit {
+  id          BigInt   @id @default(autoincrement())
+  name        String   @unique
+  country     String
+  countryCode String   @map("country_code")
+  url         String?  @unique 
+  city        String?
+  lat         Decimal?
+  lng         Decimal?
+  lenght      Decimal?
+
+  events       Event[]
+  circuitAlias CircuitAlias[]
+
+  @@map("circuit")
+}
+
+model CircuitAlias {
+  id        BigInt @id @default(autoincrement())
+  circuitId BigInt @map("circuit_id")
+  alias     String @unique 
+
+  circuit Circuit @relation(fields: [circuitId], references: [id])
+
+  @@map("circuit_alias")
+}
+
+model Event {
+  id          BigInt      @id @default(autoincrement())
+  seasonId    BigInt?     @map("season_id")
+  circuitId   BigInt?     @map("circuit_id")
+  roundNumber Int?         @map("round_number") @db.SmallInt
+  name        String
+  slug        String      @unique
+  status      EventStatus
+  image       String?
+
+  season   Season?   @relation(fields: [seasonId], references: [id])
+  circuit  Circuit?  @relation(fields: [circuitId], references: [id])
+  sessions Session[]
+
+  @@map("event")
+}
+
+model Session {
+  id          BigInt        @id @default(autoincrement())
+  eventId     BigInt        @map("event_id")
+  type        SessionType?
+  label       String
+  scheduledAt DateTime      @map("scheduled_at") @db.Timestamptz
+  duration    Int?          @db.SmallInt
+  status      SessionStatus
+
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@map("session")
+}

@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "session" ALTER COLUMN "type" DROP NOT NULL,
+ALTER COLUMN "duration" DROP NOT NULL;

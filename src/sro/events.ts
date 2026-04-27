@@ -2,7 +2,9 @@ import { chromium } from "playwright";
 import * as cheerio from "cheerio";
 import { scrapeEventTimetable } from "./session";
 
-async function scrapeGTWCSchedule() {
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+export async function scrapeGTWCSchedule() {
   console.log("starting ingestor");
 
   const browser = await chromium.launch({ headless: true });
@@ -18,10 +20,11 @@ async function scrapeGTWCSchedule() {
     // use calendar endpoint
     await page.goto("https://www.gt-world-challenge-europe.com/calendar", {
       waitUntil: "domcontentloaded",
+      timeout: 30_000,
     });
 
     // wait for element to load before scraping
-    await page.waitForSelector(".calendar__list-items");
+    await page.waitForSelector(".calendar__list-items", { timeout: 30_000 });
 
     // get the html
     const content = await page.content();
@@ -34,7 +37,6 @@ async function scrapeGTWCSchedule() {
 
     // iterate over all elements
     for (const element of futureEventsContainer.toArray()) {
-
       // check if the element has an class of full-width
       // this ensures the first element which is always wide gets a valid url
       let url = "";
@@ -48,13 +50,17 @@ async function scrapeGTWCSchedule() {
           $(element).find(".calendar__footer-list-link").attr("href");
       }
 
+      await sleep(2500);
+      const eventData = await scrapeEventTimetable(url);
+
       // construct an object of properties extracted from the DOM
       events.push({
         header: $(element).find(".calendar__race-header").text().trim(),
         round: $(element).find(".calendar__race-text").first().text().trim(),
         series: $(element).find(".calendar__race-text").last().text().trim(),
         url: url,
-        sessions: await scrapeEventTimetable(url),
+        circuitUrl: eventData[0].trackUrl,
+        sessions: eventData[1],
         id: $(element)
           .find(".calendar__footer-list-link")
           .attr("href")
@@ -66,12 +72,10 @@ async function scrapeGTWCSchedule() {
 
     // save to json file
     await Bun.write("./data/events.json", JSON.stringify(events, null, 2));
-
+    return events;
   } catch (error) {
     console.error("Error scraping site:", error);
   } finally {
     await browser.close();
   }
 }
-
-scrapeGTWCSchedule();
