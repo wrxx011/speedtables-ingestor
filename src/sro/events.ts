@@ -18,7 +18,7 @@ export async function scrapeGTWCSchedule() {
     });
 
     // use calendar endpoint
-    await page.goto("https://www.gt-world-challenge-europe.com/calendar", {
+    await page.goto(`${process.env.ROOT_DOMAIN}/calendar`, {
       waitUntil: "domcontentloaded",
       timeout: 30_000,
     });
@@ -42,11 +42,11 @@ export async function scrapeGTWCSchedule() {
       let url = "";
       if ($(element).hasClass("full-width")) {
         url =
-          "https://www.gt-world-challenge-europe.com" +
+          process.env.ROOT_DOMAIN +
           $(element).find(".link-button").attr("href");
       } else {
         url =
-          "https://www.gt-world-challenge-europe.com" +
+          process.env.ROOT_DOMAIN +
           $(element).find(".calendar__footer-list-link").attr("href");
       }
 
